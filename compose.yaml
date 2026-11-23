@@ -1,0 +1,23 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: deploy/docker/backend.Dockerfile
+    environment:
+      PILE_METER_ENV: docker
+      PILE_METER_ARTIFACT_ROOT: /workspace/runtime
+      PILE_METER_MODEL_ROOT: /workspace/models
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./runtime:/workspace/runtime
+      - ./models:/workspace/models
+
+  web:
+    build:
+      context: .
+      dockerfile: deploy/docker/frontend.Dockerfile
+    depends_on:
+      - api
+    ports:
+      - "8080:80"

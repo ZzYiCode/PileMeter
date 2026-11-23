@@ -1,0 +1,36 @@
+# IDE and OS
+.idea/
+.vscode/
+Thumbs.db
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# JavaScript
+node_modules/
+frontend/dist/
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# Runtime artifacts
+runtime/*
+!runtime/.gitkeep
+data/*
+!data/README.md
+models/*
+!models/README.md
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
