@@ -3,8 +3,8 @@
 PileMeter 是一个面向工程堆体的多视角 RGB 体积测量系统。系统计划使用 VGGT
 恢复相机、深度和点云，再通过标尺与地面基准将相对几何转换为真实尺度。
 
-> 当前仓库处于工程骨架阶段：已完成 API、流水线抽象、点云导出和前端状态页；
-> VGGT 推理、标尺求解、地面拟合和体积计算尚待接入。
+> 当前仓库已具备最小重建闭环：本地 VGGT 推理、点云导出、相机轨迹和 Web
+> 点云查看器。标尺求解、地面拟合和体积计算仍待接入。
 
 ## 第一版目标
 
@@ -27,9 +27,9 @@ VGGT 输出是相对尺度几何，不能直接作为米制测量结果。系统
 - FastAPI 健康检查接口；
 - 任务状态与输入参数契约；
 - 可测试的顺序流水线运行器；
-- VGGT 重建器接口与适配目录；
-- 标准库实现的 ASCII PLY 导出；
-- 可启动的 React/Vite 项目状态页；
+- 本地 VGGT-1B 推理和深度反投影；
+- ASCII/二进制 PLY 导出；
+- Three.js 点云与相机轨迹查看器；
 - 后端测试、GitHub Actions、Docker 与 Compose 基础配置。
 
 ## 项目结构
@@ -68,14 +68,52 @@ runtime/                 本地任务产物（不提交 Git）
 
 要求 Python 3.11+、Node.js 20+。
 
-### 后端
+### 1. Python 环境
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install -e "backend[api,dev]"
+python -m pip install torch==2.13.0 --index-url https://download.pytorch.org/whl/cu130
+python -m pip install -e "backend[api,reconstruction,dev]"
+```
+
+RTX 50 系列显卡需要支持 `sm_120` 的 PyTorch；CUDA 13 包约 1.9 GB。
+
+### 2. 连接本地模型
+
+```powershell
+.\scripts\setup-vggt.ps1
+```
+
+脚本会在不入库的位置创建：
+
+- `third_party/vggt`：VGGT 源码目录链接；
+- `models/vggt/model.safetensors`：权重硬链接。跨磁盘时可加 `-CopyWeights`。
+
+### 3. 运行重建
+
+图片放在同一目录中，建议先使用 6～10 张有连续重叠的环绕照片：
+
+```powershell
+pile-meter reconstruct --images ".\data\my_scene\images" --max-images 6
+```
+
+输出默认写入 `runtime/reconstructions/<run_id>/`：
+
+```text
+manifest.json
+predictions.npz
+points_raw.ply
+points_view.ply
+cameras.json
+```
+
+此阶段点云是 VGGT 相对尺度，不等同于真实米制体积。
+
+### 4. 启动 API
+
+```powershell
 pile-meter doctor
-pile-meter demo-ply
 uvicorn pile_meter.interfaces.api.main:app --reload
 ```
 
@@ -83,10 +121,7 @@ API 文档：<http://127.0.0.1:8000/docs>
 
 健康检查：<http://127.0.0.1:8000/api/v1/health>
 
-示例点云会写入 `runtime/demo/demo_pointcloud.ply`，可使用 MeshLab、
-CloudCompare 或后续 Web 查看器打开。
-
-### 前端
+### 5. 启动查看器
 
 ```powershell
 cd frontend
@@ -94,7 +129,8 @@ npm install
 npm run dev
 ```
 
-前端地址：<http://127.0.0.1:5173>
+前端地址：<http://127.0.0.1:5173>。页面会自动加载最近一次重建，
+支持点大小、原始颜色/Z 高度着色、相机轨迹和视角复位。
 
 ### 测试
 

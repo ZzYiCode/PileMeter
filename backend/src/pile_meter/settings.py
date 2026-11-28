@@ -12,6 +12,8 @@ class Settings:
     project_root: Path
     artifact_root: Path
     model_root: Path
+    vggt_source_root: Path
+    vggt_weights_path: Path
     api_host: str
     api_port: int
 
@@ -24,11 +26,25 @@ class Settings:
         model_root = Path(
             os.getenv("PILE_METER_MODEL_ROOT", str(project_root / "models"))
         ).resolve()
+        vggt_source_root = Path(
+            os.getenv(
+                "PILE_METER_VGGT_SOURCE",
+                str(project_root / "third_party" / "vggt"),
+            )
+        ).resolve()
+        vggt_weights_path = Path(
+            os.getenv(
+                "PILE_METER_VGGT_WEIGHTS",
+                str(model_root / "vggt" / "model.safetensors"),
+            )
+        ).resolve()
         return cls(
             environment=os.getenv("PILE_METER_ENV", "local"),
             project_root=project_root,
             artifact_root=artifact_root,
             model_root=model_root,
+            vggt_source_root=vggt_source_root,
+            vggt_weights_path=vggt_weights_path,
             api_host=os.getenv("PILE_METER_API_HOST", "127.0.0.1"),
             api_port=int(os.getenv("PILE_METER_API_PORT", "8000")),
         )
@@ -36,6 +52,7 @@ class Settings:
     def ensure_runtime_directories(self) -> None:
         self.artifact_root.mkdir(parents=True, exist_ok=True)
         (self.artifact_root / "jobs").mkdir(parents=True, exist_ok=True)
+        (self.artifact_root / "reconstructions").mkdir(parents=True, exist_ok=True)
 
 
 @lru_cache(maxsize=1)

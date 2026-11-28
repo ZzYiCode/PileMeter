@@ -10,4 +10,5 @@ def test_health_endpoint_reports_scaffold_capabilities() -> None:
     payload = response.json()
     assert payload["status"] == "ok"
     assert payload["scale_status"] == "relative"
-    assert payload["capabilities"]["vggt_reconstruction"] is False
+    assert payload["capabilities"]["vggt_reconstruction"] is True
+    assert payload["capabilities"]["pointcloud_viewer"] is True
